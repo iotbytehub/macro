@@ -1,0 +1,14 @@
+/* Import the Tailwind core */
+@import "tailwindcss";
+
+/* Configure the custom theme right here */
+@theme {
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Set up the dark mode defaults */
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-50 antialiased;
+  }
+}
