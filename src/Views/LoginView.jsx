@@ -37,33 +37,33 @@ export default function LoginView() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
-      <div className="w-full max-w-md p-8 bg-slate-900 border border-slate-800 rounded-xl">
-        <h2 className="text-2xl font-semibold text-white mb-6 tracking-tight">Sign In to Macro</h2>
+    <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)] bg-[#F8FAFC]">
+      <div className="w-full max-w-md p-8 bg-white border border-[#E2E8F0] rounded-xl shadow-lg">
+        <h2 className="text-2xl font-semibold text-[#0F172A] mb-6 tracking-tight">Sign In to Macro</h2>
         
         {error && (
-          <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/50 text-rose-500 rounded text-sm">
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
             {error}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1">Username</label>
+            <label className="block text-sm font-medium text-[#0F172A] mb-1">Username</label>
             <input
               type="text"
               required
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-4 py-2 text-[#0F172A] focus:outline-none focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] transition-colors placeholder-slate-400"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1">Password</label>
+            <label className="block text-sm font-medium text-[#0F172A] mb-1">Password</label>
             <input
               type="password"
               required
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-4 py-2 text-[#0F172A] focus:outline-none focus:border-[#0EA5E9] focus:ring-1 focus:ring-[#0EA5E9] transition-colors placeholder-slate-400"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -71,7 +71,7 @@ export default function LoginView() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-white text-slate-950 font-medium py-2 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50 mt-4"
+            className="w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white font-medium py-2 rounded-lg transition-colors disabled:opacity-50 mt-4"
           >
             {loading ? 'Authenticating...' : 'Sign In'}
           </button>

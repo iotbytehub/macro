@@ -57,9 +57,9 @@ export default function HardwareSidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-full z-10 shadow-2xl">
-      <div className="p-4 border-b border-slate-800 bg-slate-900">
-        <h3 className="text-white font-semibold flex items-center gap-2 tracking-wide">
+    <aside className="w-64 bg-white border-r border-[#E2E8F0] flex flex-col h-full z-10 shadow-2xl">
+      <div className="p-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
+        <h3 className="text-slate-800 font-semibold flex items-center gap-2 tracking-wide">
           <Layers size={18} className="text-blue-500" /> Component Library
         </h3>
         <p className="text-xs text-slate-500 mt-1">Drag hardware nodes to the canvas to build your architecture.</p>
@@ -77,9 +77,9 @@ export default function HardwareSidebar() {
                   key={j}
                   draggable
                   onDragStart={(e) => onDragStart(e, item.data)}
-                  className="bg-slate-800 border border-slate-700/50 p-2.5 rounded-lg cursor-grab active:cursor-grabbing hover:border-slate-500 hover:bg-slate-700 transition-all duration-200 shadow-sm"
+                  className="bg-[#F8FAFC] border border-[#E2E8F0] p-2.5 rounded-lg cursor-grab active:cursor-grabbing hover:border-[#0EA5E9] hover:bg-blue-50 transition-all duration-200 shadow-sm"
                 >
-                  <p className="text-sm text-slate-100 font-medium leading-tight">{item.label}</p>
+                  <p className="text-sm text-slate-800 font-medium leading-tight">{item.label}</p>
                   <p className="text-[10px] text-slate-500 font-mono mt-1">{item.sub}</p>
                 </div>
               ))}

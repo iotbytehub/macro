@@ -49,8 +49,8 @@ export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutoma
     if (limb.ui_element === 'toggle') {
       const isOn = controlStates[limb.id] || false;
       return (
-        <div key={limb.id} className="flex justify-between items-center py-2.5 border-b border-slate-800/50 last:border-0">
-          <div className="flex items-center gap-2 text-sm text-slate-300">
+        <div key={limb.id} className="flex justify-between items-center py-2.5 border-b border-slate-200 last:border-0">
+          <div className="flex items-center gap-2 text-sm text-slate-700">
             <ToggleRight size={16} className="text-emerald-500" />
             <span>{limb.display_name}</span>
           </div>
@@ -58,7 +58,7 @@ export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutoma
             onClick={() => handleControlChange(limb.id, !isOn)}
             disabled={!isActuallyOnline || isLoading}
             className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors 
-              ${isOn ? 'bg-emerald-500' : 'bg-slate-700'}
+              ${isOn ? 'bg-emerald-500' : 'bg-slate-300'}
               ${(!isActuallyOnline || isLoading) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isOn ? 'translate-x-5' : 'translate-x-1'}`} />
@@ -71,17 +71,17 @@ export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutoma
     if (limb.ui_element === 'slider') {
       const val = controlStates[limb.id] || 0;
       return (
-        <div key={limb.id} className="flex flex-col gap-2 py-3 border-b border-slate-800/50 last:border-0">
-          <div className="flex justify-between items-center text-sm text-slate-300">
+        <div key={limb.id} className="flex flex-col gap-2 py-3 border-b border-slate-200 last:border-0">
+          <div className="flex justify-between items-center text-sm text-slate-700">
             <div className="flex items-center gap-2">
               <SlidersHorizontal size={16} className="text-amber-400" />
               <span>{limb.display_name}</span>
             </div>
-            <span className="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-amber-400">{val}%</span>
+            <span className="text-xs font-mono bg-amber-100 px-2 py-0.5 rounded text-amber-600">{val}%</span>
           </div>
           <input 
             type="range" min="0" max="100" value={val}
-            className="w-full accent-amber-500 bg-slate-700 rounded-lg appearance-none h-1.5 cursor-pointer"
+            className="w-full accent-amber-500 bg-slate-200 rounded-lg appearance-none h-1.5 cursor-pointer"
             disabled={!isActuallyOnline}
             onChange={(e) => handleControlChange(limb.id, e.target.value)}
           />
@@ -92,8 +92,8 @@ export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutoma
     // 3. LIVE GRAPHS (Power Monitors, High-Freq Data)
     if (limb.ui_element === 'graph') {
       return (
-        <div key={limb.id} className="flex flex-col gap-2 py-3 border-b border-slate-800/50 last:border-0">
-          <div className="flex justify-between items-center text-sm text-slate-300">
+        <div key={limb.id} className="flex flex-col gap-2 py-3 border-b border-slate-200 last:border-0">
+          <div className="flex justify-between items-center text-sm text-slate-700">
             <div className="flex items-center gap-2">
               <LineChart size={16} className="text-purple-400" />
               <span>{limb.display_name}</span>
@@ -115,8 +115,8 @@ export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutoma
     // 4. SIMPLE GAUGES (Temperature, Humidity)
     if (limb.ui_element === 'gauge') {
       return (
-        <div key={limb.id} className="flex justify-between items-center py-2.5 border-b border-slate-800/50 last:border-0">
-          <div className="flex items-center gap-2 text-sm text-slate-300">
+        <div key={limb.id} className="flex justify-between items-center py-2.5 border-b border-slate-200 last:border-0">
+          <div className="flex items-center gap-2 text-sm text-slate-700">
             <Gauge size={16} className="text-blue-400" />
             <span>{limb.display_name}</span>
           </div>
@@ -130,7 +130,7 @@ export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutoma
   };
 
   return (
-    <div className="group relative border border-slate-800/60 bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 hover:border-cyan-500/30 transition-all duration-500 flex flex-col h-full shadow-2xl hover:shadow-cyan-500/10 hover:scale-[1.02] overflow-hidden">
+    <div className="group relative border border-[#E2E8F0] bg-white/80 backdrop-blur-md rounded-2xl p-6 hover:border-[#0EA5E9]/40 transition-all duration-500 flex flex-col h-full shadow-lg hover:shadow-[#0EA5E9]/15 hover:-translate-y-1 overflow-hidden">
       {/* Animated gradient border effect */}
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/0 via-cyan-500/5 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
       
@@ -154,7 +154,7 @@ export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutoma
         </div>
         
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-slate-800/60 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-mono text-slate-300 border border-slate-700/50">
+          <div className="flex items-center gap-2 bg-slate-100/80 px-3 py-1.5 rounded-full text-xs font-mono text-slate-600 border border-slate-200">
             <Cpu size={14} className="text-cyan-400" />
             {device.device_type}
           </div>
@@ -170,7 +170,7 @@ export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutoma
 
       {/* Device info with enhanced typography */}
       <div className="mb-6 relative z-10">
-        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-100 transition-colors duration-300">{device.name}</h3>
+        <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-[#0EA5E9] transition-colors duration-300">{device.name}</h3>
         <p className="text-sm text-slate-400 mb-3 font-mono">{timeAgoText}</p>
         <div className="flex items-center gap-2 group/copy w-fit cursor-pointer p-2 rounded-lg hover:bg-slate-800/50 transition-all duration-300" onClick={copyToClipboard}>
           <p className="text-xs text-slate-500 font-mono truncate max-w-[200px] group-hover/copy:text-slate-400 transition-colors">{device.id}</p>
@@ -179,7 +179,7 @@ export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutoma
       </div>
 
       {/* Enhanced control panel */}
-      <div className="flex-1 bg-slate-950/60 backdrop-blur-sm rounded-xl p-4 border border-slate-800/40 mb-6 overflow-y-auto min-h-[140px] relative z-10">
+      <div className="flex-1 bg-slate-50/80 backdrop-blur-sm rounded-xl p-4 border border-slate-200 mb-6 overflow-y-auto min-h-[140px] relative z-10">
         {!device.blueprint ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-6">
             <div className="relative mb-4">
@@ -197,18 +197,18 @@ export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutoma
       </div>
 
       {/* Enhanced action buttons */}
-      <div className="pt-4 border-t border-slate-800/60 mt-auto relative z-10">
+      <div className="pt-4 border-t border-slate-200 mt-auto relative z-10">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <button
             onClick={onDesignCanvas}
-            className="group/btn flex-1 flex items-center justify-center gap-3 bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 text-white text-sm py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-slate-500/20 hover:scale-105"
+            className="group/btn flex-1 flex items-center justify-center gap-3 bg-[#0EA5E9] hover:bg-[#0284C7] text-white text-sm py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-[#0EA5E9]/25 hover:-translate-y-0.5"
           >
             <PenTool size={16} className="group-hover/btn:rotate-12 transition-transform duration-200" />
             {device.blueprint ? 'Edit Architecture' : 'Design Hardware'}
           </button>
           <button
             onClick={onAutomation}
-            className="group/btn flex-1 flex items-center justify-center gap-3 bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-600 hover:to-purple-500 text-white text-sm py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-purple-500/20 hover:scale-105"
+            className="group/btn flex-1 flex items-center justify-center gap-3 bg-gradient-to-r from-violet-600 to-fuchsia-500 hover:from-violet-500 hover:to-fuchsia-400 text-white text-sm py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-violet-500/25 hover:-translate-y-0.5"
           >
             <Zap size={16} className="group-hover/btn:animate-pulse" />
             Automation Rules

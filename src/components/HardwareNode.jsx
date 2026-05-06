@@ -37,7 +37,7 @@ export default function HardwareNode({ id, data }) {
           type={type}
           position={position}
           id={`${sideName}-${index}`} // Important: Gives every pin a unique ID
-          className={`w-2.5 h-2.5 rounded border border-slate-900 ${colorClass} hover:scale-150 transition-transform cursor-crosshair z-10`}
+          className={`w-2.5 h-2.5 rounded border border-slate-300 ${colorClass} hover:scale-150 transition-transform cursor-crosshair z-10`}
           style={style}
         />
       );
@@ -45,7 +45,7 @@ export default function HardwareNode({ id, data }) {
   };
 
   return (
-    <div className={`relative px-4 py-4 rounded-xl border bg-slate-900 shadow-xl min-w-[180px] group ${config.border}`}>
+    <div className={`relative px-4 py-4 rounded-xl border bg-white/95 backdrop-blur-md shadow-xl min-w-[180px] group ${config.border}`}>
       
       {/* Delete Button (Visible only on Hover) */}
       <button 
@@ -56,8 +56,7 @@ export default function HardwareNode({ id, data }) {
         <X size={12} strokeWidth={3} />
       </button>
 
-      {/* Category Badge */}
-      <div className="absolute -top-2.5 right-3 bg-slate-800 border border-slate-700 text-[9px] text-slate-300 px-2 py-0.5 rounded-full font-mono uppercase tracking-wider shadow-sm z-10 pointer-events-none">
+      <div className="absolute -top-2.5 right-3 bg-slate-100 border border-slate-200 text-[9px] text-slate-600 px-2 py-0.5 rounded-full font-mono uppercase tracking-wider shadow-sm z-10 pointer-events-none">
         {data.category}
       </div>
 
@@ -76,8 +75,8 @@ export default function HardwareNode({ id, data }) {
           <Icon size={18} />
         </div>
         <div>
-          <div className="text-xs font-bold text-white tracking-wide">{data.label}</div>
-          <div className="text-[10px] text-slate-400 font-mono mt-0.5">{data.hardware_module}</div>
+          <div className="text-xs font-bold text-slate-800 tracking-wide">{data.label}</div>
+          <div className="text-[10px] text-slate-500 font-mono mt-0.5">{data.hardware_module}</div>
         </div>
       </div>
 
