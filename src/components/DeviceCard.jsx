@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { Activity, Cpu, Copy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Activity, Cpu, Copy, Trash2, PenTool, Gauge, ToggleRight, SlidersHorizontal, LineChart, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../api/axios';
 
-export default function DeviceCard({ device }) {
-  const [isOn, setIsOn] = useState(device.config?.pin_state || false);
+export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutomation }) {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [controlStates, setControlStates] = useState({});
 
-  // --- HEARTBEAT LOGIC ---
-  // Compare last_ping to current time. If older than 5 mins (300,000ms), it's offline.
   const lastPingDate = new Date(device.last_ping);
   const diffMinutes = Math.floor((new Date() - lastPingDate) / 60000);
   const isActuallyOnline = device.is_online && diffMinutes < 5;
@@ -25,67 +25,202 @@ export default function DeviceCard({ device }) {
     toast.success('UUID Copied to clipboard');
   };
 
-  const handleToggle = async () => {
-    const previousState = isOn;
-    setIsOn(!isOn);
+  const handleDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${device.name}? This will destroy its blueprint.`)) return;
     setIsLoading(true);
-
     try {
-      const response = await api.post(`fleet/devices/${device.id}/toggle/`, { state: !isOn });
-      if (response.data.status !== 'success') throw new Error();
-      
-      toast.success(`${device.name} turned ${!isOn ? 'ON' : 'OFF'}`);
+      await api.delete(`fleet/devices/${device.id}/`);
+      toast.success(`${device.name} deleted successfully.`);
+      if (onRefresh) onRefresh();
     } catch (error) {
-      toast.error('Device Offline. Command Failed.');
-      setIsOn(previousState);
-    } finally {
+      toast.error('Failed to delete device.');
       setIsLoading(false);
     }
   };
 
+  const handleControlChange = (limbId, newValue) => {
+    setControlStates(prev => ({ ...prev, [limbId]: newValue }));
+    toast.success(`Command queued: ${newValue}`, { id: 'control-toast' });
+  };
+
+  // --- THE UPGRADED BLUEPRINT RENDERER ---
+  const renderLimb = (limb) => {
+    // 1. TOGGLE SWITCHES (Relays, Lights)
+    if (limb.ui_element === 'toggle') {
+      const isOn = controlStates[limb.id] || false;
+      return (
+        <div key={limb.id} className="flex justify-between items-center py-2.5 border-b border-slate-800/50 last:border-0">
+          <div className="flex items-center gap-2 text-sm text-slate-300">
+            <ToggleRight size={16} className="text-emerald-500" />
+            <span>{limb.display_name}</span>
+          </div>
+          <button
+            onClick={() => handleControlChange(limb.id, !isOn)}
+            disabled={!isActuallyOnline || isLoading}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors 
+              ${isOn ? 'bg-emerald-500' : 'bg-slate-700'}
+              ${(!isActuallyOnline || isLoading) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          >
+            <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isOn ? 'translate-x-5' : 'translate-x-1'}`} />
+          </button>
+        </div>
+      );
+    }
+
+    // 2. SPEED / INTENSITY SLIDERS (Motors, PWM)
+    if (limb.ui_element === 'slider') {
+      const val = controlStates[limb.id] || 0;
+      return (
+        <div key={limb.id} className="flex flex-col gap-2 py-3 border-b border-slate-800/50 last:border-0">
+          <div className="flex justify-between items-center text-sm text-slate-300">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal size={16} className="text-amber-400" />
+              <span>{limb.display_name}</span>
+            </div>
+            <span className="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded text-amber-400">{val}%</span>
+          </div>
+          <input 
+            type="range" min="0" max="100" value={val}
+            className="w-full accent-amber-500 bg-slate-700 rounded-lg appearance-none h-1.5 cursor-pointer"
+            disabled={!isActuallyOnline}
+            onChange={(e) => handleControlChange(limb.id, e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    // 3. LIVE GRAPHS (Power Monitors, High-Freq Data)
+    if (limb.ui_element === 'graph') {
+      return (
+        <div key={limb.id} className="flex flex-col gap-2 py-3 border-b border-slate-800/50 last:border-0">
+          <div className="flex justify-between items-center text-sm text-slate-300">
+            <div className="flex items-center gap-2">
+              <LineChart size={16} className="text-purple-400" />
+              <span>{limb.display_name}</span>
+            </div>
+            <span className="text-xs font-mono text-purple-400">Live</span>
+          </div>
+          {/* A cool CSS-only placeholder for a live sparkline graph */}
+          <div className="h-10 w-full flex items-end justify-between gap-1 mt-1 opacity-70">
+            {[40, 65, 45, 80, 55, 90, 75, 100, 60, 85].map((height, i) => (
+              <div key={i} className="w-full bg-purple-500/20 rounded-t-sm" style={{ height: `${height}%` }}>
+                <div className="w-full bg-purple-400 h-0.5" />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // 4. SIMPLE GAUGES (Temperature, Humidity)
+    if (limb.ui_element === 'gauge') {
+      return (
+        <div key={limb.id} className="flex justify-between items-center py-2.5 border-b border-slate-800/50 last:border-0">
+          <div className="flex items-center gap-2 text-sm text-slate-300">
+            <Gauge size={16} className="text-blue-400" />
+            <span>{limb.display_name}</span>
+          </div>
+          <span className="text-sm font-mono text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">
+            -- 
+          </span>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <div className="border border-slate-800 bg-slate-900 rounded-xl p-5 hover:border-slate-700 transition-colors">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-3 w-3">
-            {isActuallyOnline && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
-            <span className={`relative inline-flex rounded-full h-3 w-3 ${isActuallyOnline ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-          </span>
-          <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
-            {isActuallyOnline ? 'Online' : 'Offline'}
+    <div className="group relative border border-slate-800/60 bg-slate-900/80 backdrop-blur-sm rounded-2xl p-6 hover:border-cyan-500/30 transition-all duration-500 flex flex-col h-full shadow-2xl hover:shadow-cyan-500/10 hover:scale-[1.02] overflow-hidden">
+      {/* Animated gradient border effect */}
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/0 via-cyan-500/5 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+      
+      {/* Status indicator with enhanced animation */}
+      <div className="flex justify-between items-start mb-6 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <span className="relative flex h-4 w-4">
+              {isActuallyOnline && (
+                <>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-50"></span>
+                </>
+              )}
+              <span className={`relative inline-flex rounded-full h-4 w-4 ${isActuallyOnline ? 'bg-emerald-500 shadow-lg shadow-emerald-500/50' : 'bg-rose-500'}`}></span>
+            </span>
+          </div>
+          <span className={`text-sm font-semibold uppercase tracking-wider ${isActuallyOnline ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {isActuallyOnline ? '● Online' : '● Offline'}
           </span>
         </div>
-        <div className="flex items-center gap-1 bg-slate-800 px-2 py-1 rounded text-xs font-mono text-slate-300">
-          <Cpu size={14} />
-          {device.device_type}
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-white">{device.name}</h3>
-        <p className="text-xs text-slate-500 mt-1">{timeAgoText}</p>
         
-        {/* Copy to Clipboard Utility */}
-        <div className="flex items-center gap-2 mt-2 group w-fit cursor-pointer" onClick={copyToClipboard}>
-          <p className="text-xs text-slate-600 font-mono truncate max-w-[200px]">{device.id}</p>
-          <Copy size={12} className="text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-slate-800/60 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-mono text-slate-300 border border-slate-700/50">
+            <Cpu size={14} className="text-cyan-400" />
+            {device.device_type}
+          </div>
+          <button 
+            onClick={handleDelete} 
+            className="p-2 text-slate-500 hover:text-rose-400 transition-all duration-300 hover:bg-rose-500/10 rounded-lg group/delete" 
+            title="Delete Device"
+          >
+            <Trash2 size={14} className="group-hover/delete:rotate-12 transition-transform duration-200" />
+          </button>
         </div>
       </div>
 
-      <div className="flex justify-between items-center pt-4 border-t border-slate-800">
-        <div className="text-sm text-slate-400 flex items-center gap-2">
-          <Activity size={16} />
-          <span>Pin State</span>
+      {/* Device info with enhanced typography */}
+      <div className="mb-6 relative z-10">
+        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-100 transition-colors duration-300">{device.name}</h3>
+        <p className="text-sm text-slate-400 mb-3 font-mono">{timeAgoText}</p>
+        <div className="flex items-center gap-2 group/copy w-fit cursor-pointer p-2 rounded-lg hover:bg-slate-800/50 transition-all duration-300" onClick={copyToClipboard}>
+          <p className="text-xs text-slate-500 font-mono truncate max-w-[200px] group-hover/copy:text-slate-400 transition-colors">{device.id}</p>
+          <Copy size={12} className="text-slate-600 opacity-0 group-hover/copy:opacity-100 transition-all duration-300 group-hover/copy:scale-110" />
         </div>
-        <button
-          onClick={handleToggle}
-          disabled={!isActuallyOnline || isLoading}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none 
-            ${isOn ? 'bg-blue-600' : 'bg-slate-700'}
-            ${(!isActuallyOnline || isLoading) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-        >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isOn ? 'translate-x-6' : 'translate-x-1'}`} />
-        </button>
+      </div>
+
+      {/* Enhanced control panel */}
+      <div className="flex-1 bg-slate-950/60 backdrop-blur-sm rounded-xl p-4 border border-slate-800/40 mb-6 overflow-y-auto min-h-[140px] relative z-10">
+        {!device.blueprint ? (
+          <div className="h-full flex flex-col items-center justify-center text-center p-6">
+            <div className="relative mb-4">
+              <Activity size={32} className="text-slate-600 animate-pulse" />
+              <div className="absolute inset-0 bg-cyan-500/10 rounded-full blur-xl animate-ping"></div>
+            </div>
+            <p className="text-slate-400 font-medium mb-2">No architecture defined</p>
+            <p className="text-xs text-slate-500">Design the hardware to see controls</p>
+          </div>
+        ) : (
+          <div className="flex flex-col space-y-1">
+            {device.blueprint.architecture.limbs.map(renderLimb)}
+          </div>
+        )}
+      </div>
+
+      {/* Enhanced action buttons */}
+      <div className="pt-4 border-t border-slate-800/60 mt-auto relative z-10">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <button
+            onClick={onDesignCanvas}
+            className="group/btn flex-1 flex items-center justify-center gap-3 bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 text-white text-sm py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-slate-500/20 hover:scale-105"
+          >
+            <PenTool size={16} className="group-hover/btn:rotate-12 transition-transform duration-200" />
+            {device.blueprint ? 'Edit Architecture' : 'Design Hardware'}
+          </button>
+          <button
+            onClick={onAutomation}
+            className="group/btn flex-1 flex items-center justify-center gap-3 bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-600 hover:to-purple-500 text-white text-sm py-3 rounded-xl transition-all duration-300 font-semibold shadow-lg hover:shadow-purple-500/20 hover:scale-105"
+          >
+            <Zap size={16} className="group-hover/btn:animate-pulse" />
+            Automation Rules
+          </button>
+          <button
+            onClick={() => navigate(`/devices/${device.id}/analytics`)}
+            className="group/btn flex-1 flex items-center justify-center gap-3 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30 text-sm py-3 rounded-xl transition-all duration-300 font-semibold hover:scale-105 backdrop-blur-sm"
+          >
+            <Activity size={16} className="group-hover/btn:animate-spin" style={{ animationDuration: '2s' }} />
+            Analytics
+          </button>
+        </div>
       </div>
     </div>
   );

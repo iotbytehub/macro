@@ -24,8 +24,11 @@ export default function LoginView() {
         localStorage.setItem('refresh_token', response.data.refresh);
       }
       
+      // Dispatch a custom event to notify the app of login
+      window.dispatchEvent(new Event('login'));
+      
       // Redirect to the Fleet Dashboard
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError('Invalid credentials or backend offline.');
     } finally {
@@ -36,7 +39,7 @@ export default function LoginView() {
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
       <div className="w-full max-w-md p-8 bg-slate-900 border border-slate-800 rounded-xl">
-        <h2 className="text-2xl font-semibold text-white mb-6 tracking-tight">Sign In to Nexus</h2>
+        <h2 className="text-2xl font-semibold text-white mb-6 tracking-tight">Sign In to Macro</h2>
         
         {error && (
           <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/50 text-rose-500 rounded text-sm">
