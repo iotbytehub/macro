@@ -38,9 +38,37 @@ export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutoma
     }
   };
 
-  const handleControlChange = (limbId, newValue) => {
+  const handleControlChange = async (limbId, newValue) => {
     setControlStates(prev => ({ ...prev, [limbId]: newValue }));
-    toast.success(`Command queued: ${newValue}`, { id: 'control-toast' });
+
+    const limb = device.blueprint?.architecture?.limbs?.find(l => l.id === limbId);
+    if (!limb) {
+      toast.success(`Command queued: ${newValue}`, { id: 'control-toast' });
+      return;
+    }
+
+    let command_type = 'SWITCH';
+    let apiValue = newValue;
+
+    if (limb.ui_element === 'toggle') {
+        command_type = 'SWITCH';
+        apiValue = newValue ? 1 : 0;
+    } else if (limb.ui_element === 'slider') {
+        command_type = limb.category === 'light' ? 'BRIGHTNESS' : 'SPEED';
+        apiValue = Math.round(Number(newValue) * 2.55);
+    }
+
+    try {
+        await api.post(`fleet/devices/${device.id}/command/`, {
+            limb_id: limbId,
+            command_type: command_type,
+            value: apiValue
+        });
+        toast.success(`Command sent`, { id: 'control-toast' });
+    } catch (error) {
+        console.error("Command error:", error);
+        toast.error('Failed to send command.', { id: 'control-toast' });
+    }
   };
 
   // --- THE UPGRADED BLUEPRINT RENDERER ---
