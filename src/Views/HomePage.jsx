@@ -1,7 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+function LightningCursor() {
+  const [pos, setPos] = useState({ x: 0, y: 0 });
 
+  useEffect(() => {
+    const move = (e) => {
+      setPos({
+        x: e.clientX,
+        y: e.clientY,
+      });
+    };
+
+    window.addEventListener("mousemove", move);
+
+    return () => {
+      window.removeEventListener("mousemove", move);
+    };
+  }, []);
+
+  return (
+    <motion.div
+      animate={{
+        x: pos.x - 12,
+        y: pos.y - 12,
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 500,
+        damping: 28,
+        mass: 0.2,
+      }}
+      className="fixed top-0 left-0 z-[9999] pointer-events-none"
+    >
+      <motion.div
+        animate={{
+          scale: [1, 1.15, 1],
+          opacity: [0.85, 1, 0.85],
+        }}
+        transition={{
+          duration: 0.8,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        className="text-[22px] drop-shadow-[0_0_12px_rgba(14,165,233,0.9)]"
+      >
+        ⚡
+      </motion.div>
+    </motion.div>
+  );
+}
 const devices = [
   { id: "SEN-0042", name: "Temp Sensor A1",   loc: "Warehouse A",     status: "online",  temp: "22.4°", hum: "61%", bat: "94%" },
   { id: "GW-019",   name: "Gateway Node 19",  loc: "Zone B — Roof",   status: "online",  temp: "—",     hum: "—",   bat: "AC"  },
@@ -106,8 +154,10 @@ export default function HomePage() {
   );
 
   return (
-    <div className="relative bg-[#F8FAFC] text-[#0F172A] min-h-screen overflow-x-hidden">
-      
+
+    
+    <div className="relative bg-[#F8FAFC] text-[#0F172A] min-h-screen overflow-x-hidden cursor-none">
+      <LightningCursor />
       {/* ── LAYERED BACKGROUND ANIMATION ── */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
         <motion.div
