@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion"; // Added AnimatePresence
+import { motion, AnimatePresence } from "framer-motion";
 
 const devices = [
   { id: "SEN-0042", name: "Temp Sensor A1",   loc: "Warehouse A",     status: "online",  temp: "22.4°", hum: "61%", bat: "94%" },
@@ -38,7 +38,7 @@ const statusStyles = {
 
 const FILTERS = ["All", "Online", "Idle", "Offline"];
 
-// Sparkline Component with a simple path animation
+// Sparkline Component with slower path animation
 function Sparkline({ offline }) {
   const points = Array.from({ length: 10 }, (_, i) => {
     const x = i * 20;
@@ -50,7 +50,7 @@ function Sparkline({ offline }) {
       <motion.polyline
         initial={{ pathLength: 0, opacity: 0 }}
         animate={{ pathLength: 1, opacity: 1 }}
-        transition={{ duration: 1.5, ease: "easeInOut" }}
+        transition={{ duration: 2.0, delay: 0.5, ease: "easeInOut" }} // Slower duration & added delay
         points={points}
         fill="none"
         stroke={offline ? "#CBD5E1" : "#0EA5E9"}
@@ -61,15 +61,16 @@ function Sparkline({ offline }) {
   );
 }
 
-// DeviceCard now uses motion for staggered entry and hover effects
+// DeviceCard with longer duration and updated stagger delay
 function DeviceCard({ device, index }) {
   const s = statusStyles[device.status];
   return (
-    <motion.div 
-      layout // Smoothly moves card when others are filtered out
+    <motion.div
+      layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      // Adds a base 0.5s delay, plus 0.1s for each card to create a slow cascade
+      transition={{ duration: 0.8, delay: 0.5 + (index * 0.1), ease: "easeOut" }} 
       whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(14, 165, 233, 0.15)" }}
       className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 hover:border-[#0EA5E9] transition-all duration-200 cursor-pointer"
     >
@@ -110,21 +111,21 @@ export default function HomePage() {
       {/* ── LAYERED BACKGROUND ANIMATION ── */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
         <motion.div
-          animate={{ 
+          animate={{
             scale: [1, 1.2, 1],
             opacity: [0.1, 0.3, 0.1],
             x: [0, 100, 0]
           }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }} // Kept very slow for background
           className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-sky-300/30 blur-[120px] rounded-full"
         />
         <motion.div
-          animate={{ 
+          animate={{
             scale: [1.2, 1, 1.2],
             opacity: [0.1, 0.2, 0.1],
             x: [0, -100, 0]
           }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
           className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-200/20 blur-[100px] rounded-full"
         />
       </div>
@@ -132,9 +133,10 @@ export default function HomePage() {
       <main className="relative z-10">
         {/* ── HERO ── */}
         <section className="relative flex flex-col items-center text-center px-6 pt-20 pb-16">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }} // Added 0.5s delay
             className="flex items-center gap-2 bg-[#0EA5E9]/10 border border-[#0EA5E9]/30 text-[#0EA5E9] text-xs font-medium px-3 py-1.5 rounded-full mb-6"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9] animate-pulse inline-block" />
@@ -144,22 +146,28 @@ export default function HomePage() {
           <motion.h1
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.7, ease: "easeOut" }} // Deliberately staggered after the badge
             className="text-[clamp(2.5rem,5vw,4.5rem)] font-bold leading-[1.05] tracking-[-2px] text-[#0F172A] max-w-2xl mb-5"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             Manage your <span className="text-[#0EA5E9]">IoT fleet</span> with precision
           </motion.h1>
 
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            transition={{ duration: 0.8, delay: 0.9, ease: "easeOut" }} // Further staggered
             className="text-lg text-slate-500 max-w-xl leading-relaxed mb-10"
           >
             MACRO gives engineering teams a unified platform to monitor, automate, and architect their connected device networks at scale.
           </motion.p>
 
-          <div className="flex gap-3 flex-wrap justify-center">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 1.1, ease: "easeOut" }}
+            className="flex gap-3 flex-wrap justify-center"
+          >
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -168,28 +176,29 @@ export default function HomePage() {
             >
               Access Dashboard →
             </motion.button>
-            <motion.button 
+            <motion.button
               whileHover={{ backgroundColor: "#f1f5f9" }}
               className="bg-white border border-[#E2E8F0] text-[#0F172A] px-6 py-3 rounded-xl text-sm font-medium"
             >
               View Documentation
             </motion.button>
-          </div>
+          </motion.div>
         </section>
 
         {/* ── METRICS STRIP ── */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }} // Delayed scroll-in
           className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-[#E2E8F0] border-y border-[#E2E8F0] bg-white/80 backdrop-blur-md"
         >
           {[
             { val: "2,847+", lbl: "Active Devices" },
             { val: "99.97%", lbl: "Uptime SLA" },
-            { val: "14ms",   lbl: "Avg. Latency" },
-            { val: "3.2M",   lbl: "Events / Day" },
-          ].map(({ val, lbl }, i) => (
+            { val: "14ms", lbl: "Avg. Latency" },
+            { val: "3.2M", lbl: "Events / Day" },
+          ].map(({ val, lbl }) => (
             <div key={lbl} className="flex flex-col items-center py-6">
               <span className="text-3xl font-bold tracking-tight text-[#0F172A]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                 {val}
@@ -218,7 +227,6 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
-            {/* AnimatePresence makes filtered items disappear smoothly */}
             <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               <AnimatePresence mode="popLayout">
                 {filtered.map((d, i) => <DeviceCard key={d.id} device={d} index={i} />)}
@@ -227,11 +235,16 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* ── ACTIVITY + USAGE (Simplified animation) ── */}
+        {/* ── ACTIVITY + USAGE ── */}
         <section className="max-w-5xl mx-auto px-6 py-16">
           <div className="grid md:grid-cols-2 gap-6">
             {/* Events */}
-            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }} 
+              whileInView={{ opacity: 1, x: 0 }} 
+              transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }} // Scroll delay
+              className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden"
+            >
               <div className="px-5 py-4 border-b border-[#E2E8F0] font-semibold">Recent Events</div>
               {events.map((e, i) => (
                 <div key={i} className="flex items-start gap-3 px-5 py-3 hover:bg-slate-50 border-b border-slate-50 last:border-0">
@@ -240,9 +253,14 @@ export default function HomePage() {
                 </div>
               ))}
             </motion.div>
-            
+
             {/* Usage with animated bars */}
-            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} className="bg-white border border-[#E2E8F0] rounded-2xl p-5">
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }} 
+              whileInView={{ opacity: 1, x: 0 }} 
+              transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }} // Staggered slightly after events
+              className="bg-white border border-[#E2E8F0] rounded-2xl p-5"
+            >
               <div className="font-semibold mb-4">Resource Usage</div>
               {usageBars.map(({ label, pct, color }) => (
                 <div key={label} className="mb-4">
@@ -251,11 +269,12 @@ export default function HomePage() {
                     <span className="font-bold">{pct}%</span>
                   </div>
                   <div className="bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                    <motion.div 
+                    <motion.div
                       initial={{ width: 0 }}
                       whileInView={{ width: `${pct}%` }}
-                      transition={{ duration: 1, delay: 0.3 }}
-                      className={`h-full ${color}`} 
+                      viewport={{ once: true }}
+                      transition={{ duration: 1.5, delay: 0.8, ease: "easeOut" }} // Much slower fill rate, delayed start
+                      className={`h-full ${color}`}
                     />
                   </div>
                 </div>
