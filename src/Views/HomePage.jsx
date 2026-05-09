@@ -1,49 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+function LightningCursor() {
+  const [pos, setPos] = useState({ x: 0, y: 0 });
 
-// --- BACKGROUND ANIMATION COMPONENT ---
-// This is isolated so it doesn't re-render your whole page logic.
-const BackgroundAnimation = () => {
+  useEffect(() => {
+    const move = (e) => {
+      setPos({
+        x: e.clientX,
+        y: e.clientY,
+      });
+    };
+
+    window.addEventListener("mousemove", move);
+
+    return () => {
+      window.removeEventListener("mousemove", move);
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden bg-[#F8FAFC]">
-      {/* Orb 1: Indigo */}
+    <motion.div
+      animate={{
+        x: pos.x - 12,
+        y: pos.y - 12,
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 500,
+        damping: 28,
+        mass: 0.2,
+      }}
+      className="fixed top-0 left-0 z-[9999] pointer-events-none"
+    >
       <motion.div
         animate={{
-          x: [0, 100, 0],
-          y: [0, 50, 0],
-          scale: [1, 1.2, 1],
+          scale: [1, 1.15, 1],
+          opacity: [0.85, 1, 0.85],
         }}
         transition={{
-          duration: 20,
+          duration: 0.8,
           repeat: Infinity,
-          ease: "linear",
+          ease: "easeInOut",
         }}
-        className="absolute -top-[10%] -left-[10%] h-[500px] w-[500px] rounded-full bg-[#0EA5E9]/10 blur-[100px]"
-      />
-
-      {/* Orb 2: Amber */}
-      <motion.div
-        animate={{
-          x: [0, -80, 0],
-          y: [0, 120, 0],
-          scale: [1, 1.1, 1],
-        }}
-        transition={{
-          duration: 25,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-        className="absolute top-[20%] -right-[5%] h-[600px] w-[600px] rounded-full bg-[#F59E0B]/10 blur-[120px]"
-      />
-
-      {/* Very subtle grid texture to stop it looking "muddy" */}
-      <div className="absolute inset-0 opacity-[0.015] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-    </div>
+        className="text-[22px] drop-shadow-[0_0_12px_rgba(14,165,233,0.9)]"
+      >
+        ⚡
+      </motion.div>
+    </motion.div>
   );
-};
-
-// --- DATA & STYLES ---
+}
 const devices = [
   { id: "SEN-0042", name: "Temp Sensor A1",   loc: "Warehouse A",     status: "online",  temp: "22.4°", hum: "61%", bat: "94%" },
   { id: "GW-019",   name: "Gateway Node 19",  loc: "Zone B — Roof",   status: "online",  temp: "—",     hum: "—",   bat: "AC"  },
@@ -74,20 +80,38 @@ const statusStyles = {
 
 const FILTERS = ["All", "Online", "Idle", "Offline"];
 
-// --- COMPONENTS ---
+// Sparkline Component with slower path animation
 function Sparkline({ offline }) {
   const points = Array.from({ length: 10 }, (_, i) => `${i * 20},${4 + Math.random() * 20}`).join(" ");
   return (
     <svg viewBox="0 0 180 28" className="w-full h-7 mt-2" preserveAspectRatio="none">
-      <polyline points={points} fill="none" stroke={offline ? "#CBD5E1" : "#0EA5E9"} strokeWidth="1.5" strokeLinejoin="round" />
+      <motion.polyline
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{ duration: 2.0, delay: 0.5, ease: "easeInOut" }} // Slower duration & added delay
+        points={points}
+        fill="none"
+        stroke={offline ? "#CBD5E1" : "#0EA5E9"}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
-function DeviceCard({ device }) {
+// DeviceCard with longer duration and updated stagger delay
+function DeviceCard({ device, index }) {
   const s = statusStyles[device.status];
   return (
-    <div className="bg-white/80 backdrop-blur-sm border border-[#E2E8F0] rounded-xl p-4 hover:border-[#0EA5E9] hover:shadow-lg transition-all duration-200">
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      // Adds a base 0.5s delay, plus 0.1s for each card to create a slow cascade
+      transition={{ duration: 0.8, delay: 0.5 + (index * 0.1), ease: "easeOut" }} 
+      whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(14, 165, 233, 0.15)" }}
+      className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 hover:border-[#0EA5E9] transition-all duration-200 cursor-pointer"
+    >
       <div className="flex items-center justify-between mb-2">
         <span className="text-xl">🌡️</span>
         <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${s.badge}`}>{device.status}</span>
@@ -95,7 +119,7 @@ function DeviceCard({ device }) {
       <p className="text-sm font-semibold text-[#0F172A]">{device.name}</p>
       <p className="text-xs text-slate-400 mb-3">📍 {device.loc}</p>
       <Sparkline offline={device.status === "offline"} />
-    </div>
+    </motion.div>
   );
 }
 
@@ -109,104 +133,185 @@ export default function HomePage() {
   );
 
   return (
-    <div className="relative min-h-screen w-full bg-transparent">
-      
-      {/* 1. FIXED BACKGROUND */}
-      <BackgroundAnimation />
 
-      {/* 2. SCROLLABLE CONTENT (Z-10 ensures it stays on top) */}
-      <div className="relative z-10">
-        
-        {/* HERO SECTION */}
-        <section className="flex flex-col items-center text-center px-6 pt-24 pb-16">
-          <div className="bg-[#0EA5E9]/10 border border-[#0EA5E9]/30 text-[#0EA5E9] text-xs font-medium px-3 py-1.5 rounded-full mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9] animate-pulse inline-block mr-2" />
+    
+    <div className="relative bg-[#F8FAFC] text-[#0F172A] min-h-screen overflow-x-hidden cursor-none">
+      <LightningCursor />
+      {/* ── LAYERED BACKGROUND ANIMATION ── */}
+      <div className="fixed inset-0 -z-10 pointer-events-none">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.1, 0.3, 0.1],
+            x: [0, 100, 0]
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }} // Kept very slow for background
+          className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-sky-300/30 blur-[120px] rounded-full"
+        />
+        <motion.div
+          animate={{
+            scale: [1.2, 1, 1.2],
+            opacity: [0.1, 0.2, 0.1],
+            x: [0, -100, 0]
+          }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-200/20 blur-[100px] rounded-full"
+        />
+      </div>
+
+      <main className="relative z-10">
+        {/* ── HERO ── */}
+        <section className="relative flex flex-col items-center text-center px-6 pt-20 pb-16">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }} // Added 0.5s delay
+            className="flex items-center gap-2 bg-[#0EA5E9]/10 border border-[#0EA5E9]/30 text-[#0EA5E9] text-xs font-medium px-3 py-1.5 rounded-full mb-6"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9] animate-pulse inline-block" />
             Live Fleet — 2,847 devices connected
-          </div>
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-[#0F172A] max-w-3xl mb-6">
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.7, ease: "easeOut" }} // Deliberately staggered after the badge
+            className="text-[clamp(2.5rem,5vw,4.5rem)] font-bold leading-[1.05] tracking-[-2px] text-[#0F172A] max-w-2xl mb-5"
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          >
             Manage your <span className="text-[#0EA5E9]">IoT fleet</span> with precision
-          </h1>
-          <p className="text-lg text-slate-500 max-w-xl mb-10">
-            A unified platform to monitor, automate, and architect your connected device networks at scale.
-          </p>
-          <div className="flex gap-4">
-            <button onClick={() => navigate("/login")} className="bg-[#0EA5E9] text-white px-8 py-3 rounded-xl font-medium hover:bg-[#0284C7] transition-all">
-              Access Dashboard
-            </button>
-            <button className="bg-white border border-[#E2E8F0] px-8 py-3 rounded-xl font-medium hover:border-[#0EA5E9] transition-all">
-              Documentation
-            </button>
-          </div>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.9, ease: "easeOut" }} // Further staggered
+            className="text-lg text-slate-500 max-w-xl leading-relaxed mb-10"
+          >
+            MACRO gives engineering teams a unified platform to monitor, automate, and architect their connected device networks at scale.
+          </motion.p>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 1.1, ease: "easeOut" }}
+            className="flex gap-3 flex-wrap justify-center"
+          >
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate("/login")}
+              className="bg-[#0EA5E9] text-white px-6 py-3 rounded-xl text-sm font-medium shadow-lg shadow-[#0EA5E9]/20"
+            >
+              Access Dashboard →
+            </motion.button>
+            <motion.button
+              whileHover={{ backgroundColor: "#f1f5f9" }}
+              className="bg-white border border-[#E2E8F0] text-[#0F172A] px-6 py-3 rounded-xl text-sm font-medium"
+            >
+              View Documentation
+            </motion.button>
+          </motion.div>
         </section>
 
-        {/* METRICS STRIP */}
-        <div className="grid grid-cols-2 md:grid-cols-4 border-y border-[#E2E8F0] bg-white/50 backdrop-blur-md">
+        {/* ── METRICS STRIP ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }} // Delayed scroll-in
+          className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-[#E2E8F0] border-y border-[#E2E8F0] bg-white/80 backdrop-blur-md"
+        >
           {[
             { val: "2,847+", lbl: "Active Devices" },
             { val: "99.97%", lbl: "Uptime SLA" },
-            { val: "14ms",   lbl: "Avg. Latency" },
-            { val: "3.2M",   lbl: "Events / Day" },
+            { val: "14ms", lbl: "Avg. Latency" },
+            { val: "3.2M", lbl: "Events / Day" },
           ].map(({ val, lbl }) => (
-            <div key={lbl} className="flex flex-col items-center py-8 border-x border-[#E2E8F0]/50">
-              <span className="text-3xl font-bold text-[#0F172A]">{val}</span>
-              <span className="text-xs text-slate-400 mt-1 uppercase tracking-widest">{lbl}</span>
+            <div key={lbl} className="flex flex-col items-center py-6">
+              <span className="text-3xl font-bold tracking-tight text-[#0F172A]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                {val}
+              </span>
+              <span className="text-xs text-slate-400 mt-1">{lbl}</span>
             </div>
           ))}
-        </div>
+        </motion.div>
 
-        {/* DEVICE GRID */}
-        <section className="max-w-6xl mx-auto px-6 py-20">
-          <div className="flex justify-between items-end mb-10">
-            <h2 className="text-3xl font-bold text-[#0F172A]">Live Fleet View</h2>
-            <div className="flex gap-2">
-              {FILTERS.map(f => (
-                <button
-                  key={f}
-                  onClick={() => setActiveFilter(f)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                    activeFilter === f ? "bg-[#0EA5E9] text-white" : "bg-white text-slate-500 border-[#E2E8F0]"
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {filtered.map(d => <DeviceCard key={d.id} device={d} />)}
-          </div>
-        </section>
-
-        {/* RESOURCE USAGE & FEED */}
-        <section className="max-w-6xl mx-auto px-6 pb-24 grid md:grid-cols-2 gap-8">
-           <div className="bg-white/70 backdrop-blur-md border border-[#E2E8F0] rounded-2xl p-6">
-              <h3 className="font-bold mb-4">Live Activity</h3>
-              <div className="space-y-4">
-                {events.map((e, i) => (
-                  <div key={i} className="flex items-center gap-3 text-sm text-slate-600">
-                    <span className={`w-2 h-2 rounded-full ${e.color}`} />
-                    {e.msg}
-                  </div>
+        {/* ── DEVICE GRID ── */}
+        <div className="bg-white/50 backdrop-blur-sm border-y border-[#E2E8F0]">
+          <div className="max-w-5xl mx-auto px-6 py-16">
+            <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
+              <h2 className="text-3xl font-bold tracking-tight text-[#0F172A]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Device Grid</h2>
+              <div className="flex gap-2 flex-wrap">
+                {FILTERS.map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setActiveFilter(f)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                      activeFilter === f ? "bg-[#0EA5E9] text-white border-[#0EA5E9]" : "bg-white text-slate-500 border-[#E2E8F0]"
+                    }`}
+                  >
+                    {f}
+                  </button>
                 ))}
               </div>
-           </div>
-           <div className="bg-white/70 backdrop-blur-md border border-[#E2E8F0] rounded-2xl p-6">
-              <h3 className="font-bold mb-4">Resource Usage</h3>
-              {usageBars.map(bar => (
-                <div key={bar.label} className="mb-4">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span>{bar.label}</span>
-                    <span>{bar.pct}%</span>
+            </div>
+            <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <AnimatePresence mode="popLayout">
+                {filtered.map((d, i) => <DeviceCard key={d.id} device={d} index={i} />)}
+              </AnimatePresence>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* ── ACTIVITY + USAGE ── */}
+        <section className="max-w-5xl mx-auto px-6 py-16">
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Events */}
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }} 
+              whileInView={{ opacity: 1, x: 0 }} 
+              transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }} // Scroll delay
+              className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden"
+            >
+              <div className="px-5 py-4 border-b border-[#E2E8F0] font-semibold">Recent Events</div>
+              {events.map((e, i) => (
+                <div key={i} className="flex items-start gap-3 px-5 py-3 hover:bg-slate-50 border-b border-slate-50 last:border-0">
+                  <span className={`w-2 h-2 rounded-full mt-1.5 ${e.color}`} />
+                  <p className="text-sm text-slate-600 flex-1">{e.msg}</p>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Usage with animated bars */}
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }} 
+              whileInView={{ opacity: 1, x: 0 }} 
+              transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }} // Staggered slightly after events
+              className="bg-white border border-[#E2E8F0] rounded-2xl p-5"
+            >
+              <div className="font-semibold mb-4">Resource Usage</div>
+              {usageBars.map(({ label, pct, color }) => (
+                <div key={label} className="mb-4">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>{label}</span>
+                    <span className="font-bold">{pct}%</span>
                   </div>
-                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div className={`h-full ${bar.color}`} style={{ width: `${bar.pct}%` }} />
+                  <div className="bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      whileInView={{ width: `${pct}%` }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1.5, delay: 0.8, ease: "easeOut" }} // Much slower fill rate, delayed start
+                      className={`h-full ${color}`}
+                    />
                   </div>
                 </div>
               ))}
-           </div>
+            </motion.div>
+          </div>
         </section>
-
-      </div>
+      </main>
     </div>
   );
 }
