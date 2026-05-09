@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Activity, Cpu, Copy, Trash2, PenTool, Gauge, ToggleRight, SlidersHorizontal, LineChart, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -8,6 +8,43 @@ export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutoma
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [controlStates, setControlStates] = useState({});
+  const wsRef = useRef(null);
+
+  useEffect(() => {
+    // 1. Fetch the initial state from views.py status endpoint
+    const fetchStatus = async () => {
+      try {
+        const response = await api.get(`fleet/hardware/${device.id}/status/`);
+        if (response.data && response.data.pin_state !== undefined) {
+          const newStates = {};
+          device.blueprint?.architecture?.limbs?.forEach(limb => {
+             if (limb.ui_element === 'toggle') {
+                 newStates[limb.id] = response.data.pin_state;
+             }
+          });
+          setControlStates(prev => ({...prev, ...newStates}));
+        }
+      } catch (err) {
+        console.error("Failed to fetch status:", err);
+      }
+    };
+    fetchStatus();
+
+    // 2. Setup WebSocket for instant commands
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // If we're using the Render backend, we connect via WSS
+    const host = window.location.hostname === 'localhost' ? 'localhost:8000' : 'macro-iot.onrender.com';
+    const wsUrl = `${host === 'localhost:8000' ? 'ws:' : 'wss:'}//${host}/ws/hardware/${device.id}/`;
+    
+    wsRef.current = new WebSocket(wsUrl);
+
+    wsRef.current.onopen = () => console.log(`🟢 Dashboard WebSocket Connected: ${device.id}`);
+    wsRef.current.onerror = (err) => console.error(`🔴 Dashboard WebSocket Error:`, err);
+
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+    };
+  }, [device.id, device.blueprint]);
 
   const lastPingDate = new Date(device.last_ping);
   const diffMinutes = Math.floor((new Date() - lastPingDate) / 60000);
@@ -58,16 +95,20 @@ export default function DeviceCard({ device, onRefresh, onDesignCanvas, onAutoma
         apiValue = Math.round(Number(newValue) * 2.55);
     }
 
-    try {
-        await api.post(`fleet/devices/${device.id}/command/`, {
-            limb_id: limbId,
-            command_type: command_type,
-            value: apiValue
-        });
+    // Send JSON message instantly through the WebSocket
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+            type: 'limb_command',
+            payload: {
+                limb_id: limbId,
+                type: command_type,
+                value: apiValue
+            }
+        }));
         toast.success(`Command sent`, { id: 'control-toast' });
-    } catch (error) {
-        console.error("Command error:", error);
-        toast.error('Failed to send command.', { id: 'control-toast' });
+    } else {
+        // Fallback or error
+        toast.error('WebSocket disconnected', { id: 'control-toast' });
     }
   };
 
